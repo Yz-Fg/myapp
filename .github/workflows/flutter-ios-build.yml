@@ -7,25 +7,58 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+
+      - name: Show environment
+        run: |
+          flutter --version
+          which pod || echo "cocoapods not found"
+          pod --version || true
+
+      - name: Update CocoaPods repos
+        run: pod repo update || true
+
       - name: Install dependencies
         run: flutter pub get
+
       - name: Build iOS (unsigned)
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --verbose
+
       - name: Package IPA
         run: |
-          cd build/ios/iphoneos
-          mkdir Payload
-          cp -r Runner.app Payload/
-          zip -r ../Runner-unsigned.ipa Payload
-          cd ../..
+          set -e
+          APP_DIR=$(find build/ios -type d -name "Runner.app" | head -n 1)
+          echo "Found app at: $APP_DIR"
+          cd "$(dirname "$APP_DIR")"
+          rm -rf Payload && mkdir Payload
+          cp -r "$(basename "$APP_DIR")" Payload/
+          zip -qry Runner-unsigned.ipa Payload
+          ls -lh Runner-unsigned.ipa
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: myapp-ios-unsigned
-          path: build/ios/Runner-unsigned.ipa
+          path: build/ios/**/Runner-unsigned.ipa
+          if-no-files-found: warn
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            /Users/runner/work/myapp/myapp/build/logs
+          if-no-files-found: ignore
