@@ -63,10 +63,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
               onLoadStop: (_) {
                 if (mounted) setState(() => _loading = false);
               },
-              onReceivedError: (controller, request, error) {
-                debugPrint('加载失败: ${error.description}');
-                if (mounted) setState(() => _loading = false);
-              },
             ),
             if (_loading)
               const Center(child: CircularProgressIndicator()),
