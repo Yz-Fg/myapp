@@ -57,10 +57,10 @@ class _BrowserScreenState extends State<BrowserScreen> {
                   allowsInlineMediaPlayback: true,
                 ),
               ),
-              onLoadStart: (_) {
+              onLoadStart: (controller, url) {
                 if (mounted) setState(() => _loading = true);
               },
-              onLoadStop: (_) {
+              onLoadStop: (controller, url) {
                 if (mounted) setState(() => _loading = false);
               },
             ),
