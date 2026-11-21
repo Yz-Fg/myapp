@@ -52,32 +52,11 @@ class _BrowserScreenState extends State<BrowserScreen> {
                 crossPlatform: InAppWebViewOptions(
                   javaScriptEnabled: true,
                   mediaPlaybackRequiresUserGesture: false,
-                  debuggingEnabled: true,
                 ),
                 ios: IOSInAppWebViewOptions(
                   allowsInlineMediaPlayback: true,
                 ),
               ),
-              onPermissionRequest: (controller, request) async {
-                final perms = request.resources;
-                final needMic = perms.contains(PermissionResource.AUDIO_CAPTURE);
-                final needCam = perms.contains(PermissionResource.VIDEO_CAPTURE);
-
-                bool ok = true;
-                if (needMic) {
-                  ok = ok && (await Permission.microphone.request()).isGranted;
-                }
-                if (needCam) {
-                  ok = ok && (await Permission.camera.request()).isGranted;
-                }
-
-                return PermissionRequestResponse(
-                  resources: request.resources,
-                  action: ok
-                      ? PermissionRequestResponseAction.GRANT
-                      : PermissionRequestResponseAction.DENY,
-                );
-              },
               onLoadStart: (_) {
                 if (mounted) setState(() => _loading = true);
               },
