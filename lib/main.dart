@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -188,7 +189,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
               initialOptions: InAppWebViewGroupOptions(
                 crossPlatform: InAppWebViewOptions(
                   javaScriptEnabled: true,
-                  domStorageEnabled: true,
                   mediaPlaybackRequiresUserGesture: false,
                 ),
                 ios: IOSInAppWebViewOptions(
