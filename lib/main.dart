@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Permission.microphone.request();
+  await Permission.camera.request();
   runApp(const MyApp());
 }
 
@@ -25,39 +29,7 @@ class BrowserScreen extends StatefulWidget {
 }
 
 class _BrowserScreenState extends State<BrowserScreen> {
-  late final WebViewController _controller;
   bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (_) {
-            if (mounted) setState(() => _loading = true);
-          },
-          onPageFinished: (_) {
-            if (mounted) setState(() => _loading = false);
-          },
-          onWebResourceError: (error) {
-            debugPrint('加载失败: ${error.description}');
-            if (mounted) setState(() => _loading = false);
-          },
-        ),
-      )
-      ..loadRequest(
-        Uri.parse('https://surfer-winner-daybed.ngrok-free.dev'),
-        headers: const {
-          'ngrok-skip-browser-warning': 'true',
-          'User-Agent':
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
-              'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        },
-      );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +38,60 @@ class _BrowserScreenState extends State<BrowserScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            WebViewWidget(controller: _controller),
+            InAppWebView(
+              initialUrlRequest: URLRequest(
+                url: Uri.parse('https://surfer-winner-daybed.ngrok-free.dev'),
+                headers: const {
+                  'ngrok-skip-browser-warning': 'true',
+                  'User-Agent':
+                      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+                      'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                },
+              ),
+              initialOptions: InAppWebViewGroupOptions(
+                crossPlatform: InAppWebViewOptions(
+                  javaScriptEnabled: true,
+                  mediaPlaybackRequiresUserGesture: false,
+                  debuggingEnabled: true,
+                ),
+                ios: IOSInAppWebViewOptions(
+                  allowsInlineMediaPlayback: true,
+                ),
+              ),
+              onPermissionRequest: (controller, request) async {
+                final perms = request.resources;
+                final needMic = perms.contains(
+                  PermissionRequestResourceType.AUDIO_CAPTURE,
+                );
+                final needCam = perms.contains(
+                  PermissionRequestResourceType.VIDEO_CAPTURE,
+                );
+
+                bool ok = true;
+                if (needMic) {
+                  ok = ok && (await Permission.microphone.request()).isGranted;
+                }
+                if (needCam) {
+                  ok = ok && (await Permission.camera.request()).isGranted;
+                }
+
+                if (ok) {
+                  await request.grant();
+                } else {
+                  await request.deny();
+                }
+              },
+              onLoadStart: (_) {
+                if (mounted) setState(() => _loading = true);
+              },
+              onLoadStop: (_) {
+                if (mounted) setState(() => _loading = false);
+              },
+              onReceivedError: (controller, request, error) {
+                debugPrint('加载失败: ${error.description}');
+                if (mounted) setState(() => _loading = false);
+              },
+            ),
             if (_loading)
               const Center(child: CircularProgressIndicator()),
           ],
