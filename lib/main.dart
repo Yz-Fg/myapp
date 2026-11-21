@@ -60,12 +60,8 @@ class _BrowserScreenState extends State<BrowserScreen> {
               ),
               onPermissionRequest: (controller, request) async {
                 final perms = request.resources;
-                final needMic = perms.contains(
-                  PermissionRequestResourceType.AUDIO_CAPTURE,
-                );
-                final needCam = perms.contains(
-                  PermissionRequestResourceType.VIDEO_CAPTURE,
-                );
+                final needMic = perms.contains(PermissionResource.AUDIO_CAPTURE);
+                final needCam = perms.contains(PermissionResource.VIDEO_CAPTURE);
 
                 bool ok = true;
                 if (needMic) {
@@ -75,11 +71,12 @@ class _BrowserScreenState extends State<BrowserScreen> {
                   ok = ok && (await Permission.camera.request()).isGranted;
                 }
 
-                if (ok) {
-                  await request.grant();
-                } else {
-                  await request.deny();
-                }
+                return PermissionRequestResponse(
+                  resources: request.resources,
+                  action: ok
+                      ? PermissionRequestResponseAction.GRANT
+                      : PermissionRequestResponseAction.DENY,
+                );
               },
               onLoadStart: (_) {
                 if (mounted) setState(() => _loading = true);
